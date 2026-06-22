@@ -1,24 +1,27 @@
 # ClaudeRAG
 
-A local Retrieval-Augmented Generation (RAG) system that lets Claude search and answer questions from your PDF documentation — without uploading files to any cloud service.
+A local Retrieval-Augmented Generation (RAG) system that gives Claude semantic search over your documents — running entirely on your machine, with no cloud uploads and no API key required.
 
-PDFs are chunked, embedded locally, and stored in a file-based ChromaDB vector store. A lightweight MCP server exposes the search capability to Claude so it can pull relevant passages on demand.
+Drop files into a folder. Restart Claude. Ask questions.
 
 ---
 
 ## How it works
 
 ```
-PDFs  →  ingest.py  →  ChromaDB (chroma_db/)
-                              ↑
-                        mcp_server.py
-                              ↑
-                           Claude
+docs/   →   mcp_server.py (auto-indexes on startup)   →   chroma_db/
+                                    ↑
+                                 Claude
 ```
 
-1. **`ingest.py`** reads every PDF in a folder, splits each page into overlapping text chunks, embeds them with a local sentence-transformers model, and stores them in ChromaDB on disk.
-2. **`mcp_server.py`** starts an MCP stdio server that exposes two tools to Claude: `search_documents` and `list_documents`.
-3. Claude calls those tools automatically whenever a question might be answered by your docs.
+When Claude starts `mcp_server.py`, it immediately:
+1. Compares files in `docs/` to what's already indexed in ChromaDB
+2. Ingests any new or modified files in a background task (so Claude is responsive immediately)
+3. Removes index entries for files that have been deleted from `docs/`
+
+After that, Claude can call `search`, `list_files`, and `indexing_status` against your documents automatically.
+
+**Supported file types:** `.pdf` `.docx` `.txt` `.md` `.html`
 
 ---
 
@@ -28,8 +31,8 @@ PDFs  →  ingest.py  →  ChromaDB (chroma_db/)
 |---|---|---|
 | Python | **3.10 or higher** | Check with `python3 --version`. macOS ships with 3.9 or older — install 3.10+ via [python.org](https://www.python.org/downloads/) or `brew install python@3.12` |
 | pip | any recent | Included with Python |
-| Disk space | ~600 MB | chromadb + sentence-transformers library + the `all-MiniLM-L6-v2` model (~80 MB, downloaded once on first ingest) |
-| RAM | ~500 MB | For the embedding model during ingest and server startup |
+| Disk space | ~600 MB | chromadb + sentence-transformers + the `all-MiniLM-L6-v2` model (~80 MB, downloaded on first use) |
+| RAM | ~500 MB | For the embedding model at startup |
 
 > **No API keys required.** Embeddings run entirely on your machine.
 
@@ -40,96 +43,95 @@ PDFs  →  ingest.py  →  ChromaDB (chroma_db/)
 ```bash
 cd /path/to/ClaudeRAG
 
-# Create a virtual environment and install all dependencies
+# Creates .venv/, installs dependencies, creates docs/ folder
 bash setup.sh
 ```
 
-The setup script creates `.venv/` inside the project folder and installs everything. Run it once; re-running it is safe.
+Run once. Re-running is safe.
 
 ---
 
-## Indexing your PDFs
+## Adding documents
 
-```bash
-# Index a folder of PDFs (searches subdirectories recursively)
-.venv/bin/python ingest.py /path/to/your/pdfs
+Copy or move files into the `docs/` folder:
 
-# Index a single file
-.venv/bin/python ingest.py /path/to/manual.pdf
-
-# Wipe the index and re-index from scratch
-.venv/bin/python ingest.py /path/to/your/pdfs --reset
-
-# See what's currently indexed
-.venv/bin/python ingest.py --list
+```
+ClaudeRAG/
+└── docs/
+    ├── product-manual.pdf
+    ├── api-reference.docx
+    ├── release-notes.md
+    └── troubleshooting.html
 ```
 
-The first run downloads the embedding model (~80 MB). Subsequent runs use the cached model and are fast. Re-running ingest on the same files is safe — chunks are upserted by ID, so duplicates are not created.
+The next time Claude starts, it will pick up any new or changed files automatically. No manual indexing step required.
+
+**To force a full re-index** (e.g. after bulk changes), delete the `chroma_db/` folder and restart Claude.
 
 ---
 
 ## Connecting to Claude
 
-Choose the method that matches how you run Claude.
+> **Before editing any config, update all paths** to match where you cloned this repo on your machine. Replace `/Users/username/Documents/Claude/Projects/ClaudeRAG/` with your actual path.
 
 ### Claude Desktop app
 
-Open your Claude desktop config file:
+Open (or create) your Claude desktop config:
 ```
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
-If the file doesn't exist yet, create it. Merge in the `mcpServers` block from `claude_config.json`.
-
-> **Update the paths.** Replace `/Users/username/Documents/Claude/Projects/ClaudeRAG/` with the actual path where you cloned this repo. Every path in the config block must point to your machine.
+Merge in the `mcpServers` block from `claude_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "pdf-rag": {
+    "doc-rag": {
       "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
         "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
       ],
       "env": {
-        "CHROMA_DB_PATH": "/Users/username/Documents/Claude/Projects/ClaudeRAG/chroma_db"
+        "DOCS_PATH": "/Users/username/Documents/your-docs-folder"
       }
     }
   }
 }
 ```
 
-Restart Claude desktop. The `pdf-rag` server will appear in the MCP panel.
+> **Update the paths.** `command` and the first item in `args` must point to your ClaudeRAG install. `DOCS_PATH` must point to the folder containing your documents (defaults to `docs/` inside ClaudeRAG if omitted).
+
+Restart Claude desktop. The `doc-rag` server will appear in the MCP panel.
 
 ---
 
 ### Claude Code CLI
 
-> **Update the paths** in the commands below to match where you cloned this repo before running them.
+> **Update the paths** in the commands below before running them.
 
-**Option A — add the server globally (available in every project):**
+**Option A — add globally (available in every project):**
 
 ```bash
-claude mcp add pdf-rag \
+claude mcp add doc-rag \
   /Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python \
   -- \
   /Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py
 ```
 
-**Option B — add it to a specific project only:**
+**Option B — add to a specific project only:**
 
 Create or edit `.mcp.json` in your project root:
 
 ```json
 {
   "mcpServers": {
-    "pdf-rag": {
+    "doc-rag": {
       "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
         "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
       ],
       "env": {
-        "CHROMA_DB_PATH": "/Users/username/Documents/Claude/Projects/ClaudeRAG/chroma_db"
+        "DOCS_PATH": "/Users/username/Documents/your-docs-folder"
       }
     }
   }
@@ -145,53 +147,59 @@ claude mcp list
 
 ### Claude Code in VS Code
 
-The VS Code Claude extension reads MCP servers from `.mcp.json` in your workspace root (same format as Option B above). Place the file at the root of the project you're working in and reload the window (`Cmd+Shift+P` → "Developer: Reload Window").
+The VS Code Claude extension reads MCP servers from `.mcp.json` in your workspace root (same format as Option B above). Place the file at the root of your project and reload the window (`Cmd+Shift+P` → "Developer: Reload Window").
 
-You can confirm it loaded via the Claude panel's MCP status indicator, or by asking Claude: *"What MCP tools do you have available?"*
+Confirm it loaded by asking Claude: *"What MCP tools do you have available?"*
 
 ---
 
 ## Using it
 
-Once connected, Claude searches your docs automatically when relevant. You can also ask directly:
+Claude searches your documents automatically when relevant. You can also ask directly:
 
-- *"Search the documentation for how to configure authentication."*
-- *"What does the API reference say about rate limits?"*
+- *"What does the documentation say about authentication?"*
 - *"List all the documents you have indexed."*
+- *"Is indexing still running?"*
 
-Claude uses `search_documents` for semantic search and `list_documents` to show what's in the index.
+The three available tools are:
+
+| Tool | What it does |
+|---|---|
+| `search` | Semantic search — returns the most relevant passages with file and page |
+| `list_files` | Lists every indexed file and its chunk count |
+| `indexing_status` | Reports whether background indexing is still in progress |
 
 ---
 
 ## Configuration
 
-All settings can be overridden with environment variables — either in your shell or in the `env` block of your MCP config.
+All settings are optional. Set them in the `env` block of your MCP config.
 
 | Variable | Default | Description |
 |---|---|---|
-| `CHROMA_DB_PATH` | `./chroma_db` | Where ChromaDB stores its data |
-| `COLLECTION_NAME` | `pdf_docs` | ChromaDB collection name |
+| `DOCS_PATH` | `./docs` (next to `mcp_server.py`) | Folder to watch for documents |
+| `COLLECTION_NAME` | `knowledge_base` | ChromaDB collection name |
 | `EMBED_MODEL` | `all-MiniLM-L6-v2` | sentence-transformers model |
-| `CHUNK_SIZE` | `400` | Words per chunk (ingest only) |
-| `CHUNK_OVERLAP` | `50` | Word overlap between chunks (ingest only) |
+| `CHUNK_SIZE` | `400` | Words per chunk |
+| `CHUNK_OVERLAP` | `50` | Word overlap between chunks |
 
-To use a different embedding model, set `EMBED_MODEL` to any model name from [Sentence Transformers](https://www.sbert.net/docs/sentence_transformer/pretrained_models.html). Use the **same model** for both ingest and the server, or results will be garbage.
+`chroma_db/` is always created in the same directory as `mcp_server.py` and is not configurable.
+
+To use a different embedding model, pick any name from [Sentence Transformers](https://www.sbert.net/docs/sentence_transformer/pretrained_models.html). **If you change the model, delete `chroma_db/` and let it re-index** — vectors from different models are not comparable.
 
 ---
 
 ## Caveats
 
-**PDF quality matters.** Text extraction works well for digitally-created PDFs. Scanned PDFs (photos of pages) produce garbled or empty text — run them through an OCR tool (e.g., Adobe Acrobat, `ocrmypdf`) first.
+**File changes are detected by modification time.** If you update a file's content, its chunks will be re-indexed on next startup. If you replace a file without changing its name or mtime (unusual), delete `chroma_db/` to force a full re-index.
 
-**Complex layouts.** Multi-column pages, tables, and heavy formatting can confuse text extraction. If results are poor for a specific document, check what `pypdf` extracts by running `ingest.py --list` and looking at chunk counts — very low counts usually mean extraction failed.
+**Startup is fast when nothing is new.** If there are many new files, background indexing runs while Claude is already available. The `indexing_status` tool tells you when it's done and `search` results will note if indexing is still in progress.
 
-**First-run model download.** `sentence-transformers` downloads the embedding model on first use (~80 MB). This requires internet access once. After that, everything is offline.
+**PDF and DOCX quality matters.** Digitally-created files extract cleanly. Scanned PDFs (photos of pages) produce garbled or empty text — run them through OCR (e.g. `ocrmypdf`, Adobe Acrobat) first. Complex multi-column layouts and tables may extract imperfectly.
 
-**Single writer.** Don't run `ingest.py` at the same time as `mcp_server.py` is actively handling a query against the same collection. ChromaDB is safe for concurrent reads but not concurrent write+read on the same collection.
+**The database is single-writer.** Don't point two running instances of `mcp_server.py` at the same `chroma_db/`. Multiple read-only queries are fine.
 
-**Index is not updated automatically.** If you add new PDFs, re-run `ingest.py`. Existing chunks are upserted (not duplicated), so you don't need `--reset` unless you want to remove deleted files from the index.
-
-**Model must match.** If you change `EMBED_MODEL`, you must `--reset` and re-ingest. Vectors from different models are not comparable.
+**The docs folder is not watched in real time.** New files are only picked up when `mcp_server.py` restarts (i.e. when Claude restarts or reconnects).
 
 ---
 
@@ -199,12 +207,12 @@ To use a different embedding model, set `EMBED_MODEL` to any model name from [Se
 
 ```
 ClaudeRAG/
-├── ingest.py           — PDF → ChromaDB ingestion script
-├── mcp_server.py       — MCP stdio server for Claude
+├── mcp_server.py       — MCP server + auto-sync (the only script needed)
+├── docs/               — drop your documents here
+├── chroma_db/          — vector store (auto-created on first run)
 ├── requirements.txt    — Python dependencies
-├── setup.sh            — One-command install script
-├── claude_config.json  — Example MCP config snippet
-└── chroma_db/          — Vector store (created on first ingest)
+├── setup.sh            — one-command install
+└── claude_config.json  — example MCP config (update paths before use)
 ```
 
-The `chroma_db/` folder is the entire knowledge base. To move the system to another machine, copy the whole `ClaudeRAG/` directory, run `bash setup.sh` on the new machine, and update the paths in your MCP config.
+To move the system to another machine: copy the whole `ClaudeRAG/` directory, run `bash setup.sh`, and update the paths in your MCP config. The `chroma_db/` folder travels with it — no need to re-index.

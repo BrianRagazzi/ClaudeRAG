@@ -1,13 +1,15 @@
 # ClaudeRAG dependencies
 # Install with: pip install -r requirements.txt
 
-# PDF text extraction
-pypdf>=4.0.0
+# Document text extraction
+pypdf>=4.0.0          # PDF files
+python-docx>=1.1.0    # DOCX files
+# .txt, .md, .html — no extra deps needed (stdlib)
 
 # Vector store (file-based, no server needed)
 chromadb>=0.5.0
 
-# Local embeddings — downloads all-MiniLM-L6-v2 (~80MB) on first use
+# Local embeddings — downloads all-MiniLM-L6-v2 (~80 MB) on first use
 sentence-transformers>=3.0.0
 
 # MCP server SDK

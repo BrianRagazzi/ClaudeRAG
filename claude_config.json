@@ -1,14 +1,12 @@
 {
   "mcpServers": {
-    "pdf-rag": {
+    "doc-rag": {
       "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
         "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
       ],
       "env": {
-        "CHROMA_DB_PATH": "/Users/username/Documents/Claude/Projects/ClaudeRAG/chroma_db",
-        "COLLECTION_NAME": "pdf_docs",
-        "EMBED_MODEL": "all-MiniLM-L6-v2"
+        "DOCS_PATH": "/Users/username/Documents/your-docs-folder"
       }
     }
   }

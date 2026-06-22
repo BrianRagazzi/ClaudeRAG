@@ -22,16 +22,23 @@ echo "Installing dependencies (sentence-transformers downloads ~80 MB on first m
 "$VENV/bin/pip" install --quiet --upgrade pip
 "$VENV/bin/pip" install --quiet -r "$SCRIPT_DIR/requirements.txt"
 
+# Create docs folder if it doesn't exist
+mkdir -p "$SCRIPT_DIR/docs"
+
 echo ""
 echo "✓ Setup complete!"
 echo ""
 echo "Next steps:"
 echo ""
-echo "  1. Index your PDFs:"
-echo "     $VENV/bin/python $SCRIPT_DIR/ingest.py /path/to/your/pdfs"
+echo "  1. Drop your documents into:"
+echo "     $SCRIPT_DIR/docs/"
+echo "     (Supported: .pdf  .docx  .txt  .md  .html)"
 echo ""
-echo "  2. Add the MCP server to Claude desktop."
-echo "     Open: ~/Library/Application Support/Claude/claude_desktop_config.json"
+echo "  2. Add the MCP server to Claude. Open:"
+echo "     ~/Library/Application Support/Claude/claude_desktop_config.json"
 echo "     Merge in the contents of: $SCRIPT_DIR/claude_config.json"
+echo "     Update the paths to match your machine."
 echo ""
-echo "  3. Restart Claude desktop — you're ready to search your docs!"
+echo "  3. Restart Claude — it will index your docs automatically on startup."
+echo ""
+echo "  To force a full re-index, delete the chroma_db/ folder and restart Claude."
