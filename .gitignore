@@ -1,8 +1,11 @@
 # Virtual environment
 .venv/
 
-# ChromaDB vector store — rebuild with ingest.py after cloning
+# ChromaDB vector store — rebuilds automatically on first run
 chroma_db/
+
+# Local documents — add your own files here, not tracked in git
+docs/
 
 # Python
 __pycache__/

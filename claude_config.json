@@ -4,10 +4,7 @@
       "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
         "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
-      ],
-      "env": {
-        "DOCS_PATH": "/Users/username/Documents/your-docs-folder"
-      }
+      ]
     }
   }
 }

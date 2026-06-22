@@ -90,16 +90,13 @@ Merge in the `mcpServers` block from `claude_config.json`:
       "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
         "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
-      ],
-      "env": {
-        "DOCS_PATH": "/Users/username/Documents/your-docs-folder"
-      }
+      ]
     }
   }
 }
 ```
 
-> **Update the paths.** `command` and the first item in `args` must point to your ClaudeRAG install. `DOCS_PATH` must point to the folder containing your documents (defaults to `docs/` inside ClaudeRAG if omitted).
+> **Update the paths.** `command` and the first item in `args` must point to your ClaudeRAG install. That's all that's required — documents are read from `docs/` inside the ClaudeRAG folder by default. Add `"env": {"DOCS_PATH": "/path/to/your/docs"}` only if you want to point at a folder elsewhere on your machine.
 
 Restart Claude desktop. The `doc-rag` server will appear in the MCP panel.
 
@@ -129,10 +126,7 @@ Create or edit `.mcp.json` in your project root:
       "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
         "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
-      ],
-      "env": {
-        "DOCS_PATH": "/Users/username/Documents/your-docs-folder"
-      }
+      ]
     }
   }
 }
@@ -177,7 +171,7 @@ All settings are optional. Set them in the `env` block of your MCP config.
 
 | Variable | Default | Description |
 |---|---|---|
-| `DOCS_PATH` | `./docs` (next to `mcp_server.py`) | Folder to watch for documents |
+| `DOCS_PATH` | `./docs` (next to `mcp_server.py`) | Override if your docs live elsewhere on disk |
 | `COLLECTION_NAME` | `knowledge_base` | ChromaDB collection name |
 | `EMBED_MODEL` | `all-MiniLM-L6-v2` | sentence-transformers model |
 | `CHUNK_SIZE` | `400` | Words per chunk |
