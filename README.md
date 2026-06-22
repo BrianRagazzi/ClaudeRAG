@@ -162,6 +162,8 @@ The three available tools are:
 | `search` | Semantic search — returns the most relevant passages with file and page |
 | `list_files` | Lists every indexed file and its chunk count |
 | `indexing_status` | Reports whether background indexing is still in progress |
+| `sync` | Scans docs/ for new or changed files and indexes them in the background |
+| `restart` | Restarts the server process; Claude reconnects automatically |
 
 ---
 

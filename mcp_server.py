@@ -291,6 +291,23 @@ async def list_tools() -> list[types.Tool]:
             ),
             inputSchema={"type": "object", "properties": {}},
         ),
+        types.Tool(
+            name="sync",
+            description=(
+                "Scan the docs folder for new or changed files and index them. "
+                "Returns immediately — use indexing_status to track progress. "
+                "Safe to call at any time; ignored if a sync is already running."
+            ),
+            inputSchema={"type": "object", "properties": {}},
+        ),
+        types.Tool(
+            name="restart",
+            description=(
+                "Restart the MCP server process. Use this after adding many new files "
+                "or if the server appears stuck. Claude will reconnect automatically."
+            ),
+            inputSchema={"type": "object", "properties": {}},
+        ),
     ]
 
 
@@ -373,6 +390,26 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         if _sync_running:
             text += f"\n\n⏳ Note: indexing is still in progress ({_sync_message}). Results may be incomplete."
         return [types.TextContent(type="text", text=text)]
+
+    if name == "sync":
+        if _sync_running:
+            return [types.TextContent(
+                type="text",
+                text=f"Sync already in progress: {_sync_message}",
+            )]
+        asyncio.ensure_future(sync_docs(_collection))
+        return [types.TextContent(
+            type="text",
+            text=f"Sync started. Scanning {DOCS_PATH} for new or changed files.\nCall indexing_status to track progress.",
+        )]
+
+    if name == "restart":
+        import os, sys
+        # Replace this process with a fresh copy — Claude will reconnect automatically.
+        logging.warning("Restarting server on request.")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+        # execv does not return; the line below is unreachable but satisfies type checkers
+        return []  # pragma: no cover
 
     raise ValueError(f"Unknown tool: {name}")
 
