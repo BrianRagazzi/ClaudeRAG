@@ -1,0 +1,21 @@
+# Virtual environment
+.venv/
+
+# ChromaDB vector store — rebuild with ingest.py after cloning
+chroma_db/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Environment / secrets
+.env
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
