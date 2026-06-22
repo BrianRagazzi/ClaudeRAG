@@ -38,7 +38,7 @@ PDFs  →  ingest.py  →  ChromaDB (chroma_db/)
 ## Setup
 
 ```bash
-cd /Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG
+cd /path/to/ClaudeRAG
 
 # Create a virtual environment and install all dependencies
 bash setup.sh
@@ -79,18 +79,20 @@ Open your Claude desktop config file:
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
-If the file doesn't exist yet, create it. Merge in the `mcpServers` block from `claude_config.json`:
+If the file doesn't exist yet, create it. Merge in the `mcpServers` block from `claude_config.json`.
+
+> **Update the paths.** Replace `/Users/username/Documents/Claude/Projects/ClaudeRAG/` with the actual path where you cloned this repo. Every path in the config block must point to your machine.
 
 ```json
 {
   "mcpServers": {
     "pdf-rag": {
-      "command": "/Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
+      "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
-        "/Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
+        "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
       ],
       "env": {
-        "CHROMA_DB_PATH": "/Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/chroma_db"
+        "CHROMA_DB_PATH": "/Users/username/Documents/Claude/Projects/ClaudeRAG/chroma_db"
       }
     }
   }
@@ -103,13 +105,15 @@ Restart Claude desktop. The `pdf-rag` server will appear in the MCP panel.
 
 ### Claude Code CLI
 
+> **Update the paths** in the commands below to match where you cloned this repo before running them.
+
 **Option A — add the server globally (available in every project):**
 
 ```bash
 claude mcp add pdf-rag \
-  /Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python \
+  /Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python \
   -- \
-  /Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/mcp_server.py
+  /Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py
 ```
 
 **Option B — add it to a specific project only:**
@@ -120,12 +124,12 @@ Create or edit `.mcp.json` in your project root:
 {
   "mcpServers": {
     "pdf-rag": {
-      "command": "/Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
+      "command": "/Users/username/Documents/Claude/Projects/ClaudeRAG/.venv/bin/python",
       "args": [
-        "/Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
+        "/Users/username/Documents/Claude/Projects/ClaudeRAG/mcp_server.py"
       ],
       "env": {
-        "CHROMA_DB_PATH": "/Users/brianragazzi/Documents/Claude/Projects/ClaudeRAG/chroma_db"
+        "CHROMA_DB_PATH": "/Users/username/Documents/Claude/Projects/ClaudeRAG/chroma_db"
       }
     }
   }
